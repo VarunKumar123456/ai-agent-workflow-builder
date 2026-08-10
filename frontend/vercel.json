@@ -1,5 +1,5 @@
 {
-  "crons": [
-    { "path": "/api/scheduledTrigger", "schedule": "* * * * *" }
-  ]
-}
+     "crons": [
+       { "path": "/api/scheduledTrigger", "schedule": "0 3 * * *" }
+     ]
+   }
