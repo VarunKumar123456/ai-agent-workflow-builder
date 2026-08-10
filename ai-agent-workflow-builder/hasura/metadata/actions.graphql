@@ -1,0 +1,61 @@
+# Paste into Hasura Console → Actions → and define each Action with these
+# type signatures. Set "Handler" to your deployed function URL for each
+# (nhost functions deploy to https://<subdomain>.functions.<region>.nhost.run/v1/<name>).
+# All five require the `user` role to be permitted to call them (Actions have
+# their own permission tab — restrict to role `user` for all except
+# webhookTrigger/scheduledTrigger/onDbEvent/notifyDispatch, which are called
+# by external systems / Hasura itself, not GraphQL clients, and should NOT be
+# exposed as Actions at all — they're plain HTTP endpoints / event trigger
+# webhooks, listed separately below for clarity).
+
+type Mutation {
+  triggerWorkflowRun(workflow_id: uuid!): TriggerWorkflowRunOutput
+  approveStep(step_run_id: uuid!): ApproveStepOutput
+  upsertWorkflowStep(
+    id: uuid
+    workflow_id: uuid!
+    step_order: Int!
+    type: String!
+    config: json!
+  ): WorkflowStepOutput
+  upsertWorkflowTrigger(
+    id: uuid
+    workflow_id: uuid!
+    type: String!
+    config: json!
+  ): WorkflowTriggerOutput
+}
+
+type TriggerWorkflowRunOutput {
+  id: uuid!
+}
+
+type ApproveStepOutput {
+  workflow_run_id: uuid!
+  status: String!
+}
+
+type WorkflowStepOutput {
+  id: uuid!
+  step_order: Int!
+  type: String!
+  config: json!
+}
+
+type WorkflowTriggerOutput {
+  id: uuid!
+  type: String!
+  config: json!
+  webhook_token: uuid
+}
+
+# ---------------------------------------------------------------------------
+# NOT Hasura Actions — plain HTTP function endpoints / Event Trigger targets.
+# Wire these separately:
+#
+#   POST /v1/functions/webhookTrigger/:token         (external systems call this directly)
+#   POST /v1/functions/scheduledTrigger               (nhost cron, see scheduledTrigger.ts)
+#   POST /v1/functions/eventHandlers/onDbEvent         (Hasura Event Trigger target — configure
+#                                                        one Event Trigger per watched table)
+#   POST /v1/functions/eventHandlers/notifyDispatch    (Hasura Event Trigger on step_runs UPDATE)
+# ---------------------------------------------------------------------------
