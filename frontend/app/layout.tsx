@@ -1,7 +1,7 @@
 'use client';
 
 import { NhostReactProvider } from '@nhost/react';
-import { nhost, NhostApolloProvider } from '../lib/nhost';
+import { nhost } from '../lib/nhost';
 import { OrgProvider } from '../components/OrgContext';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -9,9 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <NhostReactProvider nhost={nhost}>
-          <NhostApolloProvider nhost={nhost}>
-            <OrgProvider>{children}</OrgProvider>
-          </NhostApolloProvider>
+          <OrgProvider>{children}</OrgProvider>
         </NhostReactProvider>
       </body>
     </html>

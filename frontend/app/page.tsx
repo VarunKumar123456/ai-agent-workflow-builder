@@ -38,8 +38,7 @@ export default function Home() {
       </button>
       {(signInError || signUpError) && <p style={{ color: 'red' }}>{signInError?.message || signUpError?.message}</p>}
       <p style={{ fontSize: 12, color: '#666', marginTop: 16 }}>
-        After signing up, an owner needs to add you to an organization via the <code>org_members</code> table
-        (Hasura console, or a seed script) — this assignment doesn't include self-serve org creation UI.
+        After signing up, an owner needs to add you to an organization via the <code>org_members</code> table.
       </p>
     </div>
   );
