@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useOrg } from '../../components/OrgContext';
-import RunView from '../../components/RunView';
-import WorkflowBuilder from '../../components/WorkflowBuilder';
+import { useState, useEffect } from 'react';
 import { gqlRequest } from '../../lib/gql';
+import { useOrg } from '../../components/OrgContext';
+import WorkflowBuilder from '../../components/WorkflowBuilder';
+import RunView from '../../components/RunView';
 
 const GET_ORG_WORKFLOWS = `
   query GetOrgWorkflows($orgId: uuid!) {
@@ -32,20 +32,37 @@ const TRIGGER_WORKFLOW_RUN = `
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const { activeOrgId, activeRole, memberships, setActiveOrgId } = useOrg();
 
-  if (!mounted) return null;
+  const { activeOrgId, activeRole, memberships, setActiveOrgId, loading: orgsLoading, error: orgsError } = useOrg();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editingWorkflowId, setEditingWorkflowId] = useState<string | 'new' | null>(null);
   const [viewingRunId, setViewingRunId] = useState<string | null>(null);
 
+  if (!mounted) return null;
+
+  if (orgsError) {
+    return (
+      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+        <h2 style={{ color: 'red' }}>Error loading organizations</h2>
+        <pre style={{ background: '#fee', padding: 12, whiteSpace: 'pre-wrap' }}>{orgsError}</pre>
+      </div>
+    );
+  }
+  if (orgsLoading) return <p style={{ padding: 24 }}>Loading orgs…</p>;
+  if (memberships.length === 0) {
+    return <p style={{ padding: 24 }}>You're not a member of any organization yet. Ask an owner to add you via <code>org_members</code>.</p>;
+  }
+
+  const [workflowsError, setWorkflowsError] = useState<string | null>(null);
+
   const refetch = () => {
     if (!activeOrgId) return;
     setLoading(true);
+    setWorkflowsError(null);
     gqlRequest(GET_ORG_WORKFLOWS, { orgId: activeOrgId })
       .then((d) => setData(d))
-      .catch((e) => console.error(e))
+      .catch((e) => { console.error(e); setWorkflowsError(String(e.message ?? e)); })
       .finally(() => setLoading(false));
   };
 
@@ -94,6 +111,7 @@ export default function Dashboard() {
       </header>
 
       {loading && <p>Loading workflows…</p>}
+      {workflowsError && <pre style={{ background: '#fee', padding: 12, whiteSpace: 'pre-wrap' }}>{workflowsError}</pre>}
 
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {data?.workflows?.map((wf: any) => {

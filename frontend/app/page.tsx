@@ -1,15 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthenticationStatus, useSignInEmailPassword, useSignUpEmailPassword } from '@nhost/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const { isAuthenticated, isLoading } = useAuthenticationStatus();
-
-  if (!mounted) return null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');

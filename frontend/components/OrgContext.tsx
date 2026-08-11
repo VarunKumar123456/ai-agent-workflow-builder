@@ -16,6 +16,7 @@ interface OrgContextValue {
   activeRole: 'owner' | 'editor' | 'viewer' | null;
   loading: boolean;
   refetchOrgs: () => void;
+  error: string | null;
 }
 
 const OrgContext = createContext<OrgContextValue | null>(null);
@@ -35,6 +36,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const refetchOrgs = () => setTick((t) => t + 1);
 
@@ -44,6 +46,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setLoading(true);
+    setError(null);
     gqlRequest<{ org_members: OrgMembership[] }>(GET_MY_ORGS)
       .then((data) => {
         setMemberships(data.org_members ?? []);
@@ -51,6 +54,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         console.error('Failed to load orgs:', err);
+        setError(String(err.message ?? err));
         setLoading(false);
       });
   }, [isAuthenticated, tick]);
@@ -64,7 +68,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const activeRole = memberships.find((m) => m.organization.id === activeOrgId)?.role ?? null;
 
   return (
-    <OrgContext.Provider value={{ memberships, activeOrgId, setActiveOrgId, activeRole, loading, refetchOrgs }}>
+    <OrgContext.Provider value={{ memberships, activeOrgId, setActiveOrgId, activeRole, loading, refetchOrgs, error }}>
       {children}
     </OrgContext.Provider>
   );

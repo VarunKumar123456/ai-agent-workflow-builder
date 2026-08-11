@@ -7,8 +7,7 @@
 import { nhost } from './nhost';
 
 export async function gqlRequest<T = any>(query: string, variables: Record<string, any> = {}): Promise<T> {
-  const session = nhost.auth.getSession();
-  const token = session?.accessToken;
+  const token = nhost.auth.getAccessToken();
 
   const res = await fetch(
     `https://${process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN}.graphql.${process.env.NEXT_PUBLIC_NHOST_REGION}.nhost.run/v1`,
