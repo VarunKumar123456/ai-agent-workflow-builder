@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { gqlRequest } from '../../lib/gql';
+import { useEffect, useState } from 'react';
 import { useOrg } from '../../components/OrgContext';
-import WorkflowBuilder from '../../components/WorkflowBuilder';
 import RunView from '../../components/RunView';
+import WorkflowBuilder from '../../components/WorkflowBuilder';
+import { gqlRequest } from '../../lib/gql';
 
 const GET_ORG_WORKFLOWS = `
   query GetOrgWorkflows($orgId: uuid!) {
@@ -30,7 +30,11 @@ const TRIGGER_WORKFLOW_RUN = `
 `;
 
 export default function Dashboard() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const { activeOrgId, activeRole, memberships, setActiveOrgId } = useOrg();
+
+  if (!mounted) return null;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editingWorkflowId, setEditingWorkflowId] = useState<string | 'new' | null>(null);
