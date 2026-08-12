@@ -1,19 +1,18 @@
-// Minimal GraphQL client — replaces Apollo Client entirely.
-// Apollo was silently failing due to a version conflict; this has zero
-// dependency risk since it's just fetch(). Subscriptions become polling
-// (see RunView.tsx) instead of real websockets — a deliberate trade-off
-// under time pressure, still gives visibly "live" updates every 1.5s.
-
 import { nhost } from './nhost';
 
 export async function gqlRequest<T = any>(query: string, variables: Record<string, any> = {}): Promise<T> {
+  await nhost.auth.isAuthenticatedAsync();
   const token = nhost.auth.getAccessToken();
+
+  if (!token) {
+    throw new Error('Not authenticated yet — no access token available. Try refreshing the page after logging in.');
+  }
 
   const res = await fetch('/api/graphql-proxy', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ query, variables }),
   });

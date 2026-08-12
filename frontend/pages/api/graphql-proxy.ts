@@ -1,7 +1,3 @@
-// Proxies browser GraphQL requests to Hasura server-side.
-// The browser calls THIS same-origin endpoint (no CORS possible), and this
-// serverless function forwards to Hasura server-to-server (CORS doesn't
-// apply to server-to-server fetch at all).
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
