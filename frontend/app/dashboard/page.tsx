@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { gqlRequest } from '../../lib/gql';
+import { useEffect, useState } from 'react';
 import { useOrg } from '../../components/OrgContext';
-import WorkflowBuilder from '../../components/WorkflowBuilder';
 import RunView from '../../components/RunView';
+import WorkflowBuilder from '../../components/WorkflowBuilder';
+import { gqlRequest } from '../../lib/gql';
 
 const GET_ORG_WORKFLOWS = `
   query GetOrgWorkflows($orgId: uuid!) {
@@ -31,30 +31,14 @@ const TRIGGER_WORKFLOW_RUN = `
 
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const { activeOrgId, activeRole, memberships, setActiveOrgId, loading: orgsLoading, error: orgsError } = useOrg();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [workflowsError, setWorkflowsError] = useState<string | null>(null);
   const [editingWorkflowId, setEditingWorkflowId] = useState<string | 'new' | null>(null);
   const [viewingRunId, setViewingRunId] = useState<string | null>(null);
 
-  if (!mounted) return null;
-
-  if (orgsError) {
-    return (
-      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
-        <h2 style={{ color: 'red' }}>Error loading organizations</h2>
-        <pre style={{ background: '#fee', padding: 12, whiteSpace: 'pre-wrap' }}>{orgsError}</pre>
-      </div>
-    );
-  }
-  if (orgsLoading) return <p style={{ padding: 24 }}>Loading orgs…</p>;
-  if (memberships.length === 0) {
-    return <p style={{ padding: 24 }}>You're not a member of any organization yet. Ask an owner to add you via <code>org_members</code>.</p>;
-  }
-
-  const [workflowsError, setWorkflowsError] = useState<string | null>(null);
+  useEffect(() => setMounted(true), []);
 
   const refetch = () => {
     if (!activeOrgId) return;
@@ -67,11 +51,25 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    refetch();
+    if (activeOrgId) refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOrgId]);
 
-  if (!activeOrgId) return <p style={{ padding: 24 }}>Loading orgs…</p>;
+  if (!mounted) return null;
+
+  if (orgsError) {
+    return (
+      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+        <h2 style={{ color: 'red' }}>Error loading organizations</h2>
+        <pre style={{ background: '#fee', padding: 12, whiteSpace: 'pre-wrap' }}>{orgsError}</pre>
+      </div>
+    );
+  }
+  if (orgsLoading) return <p style={{ padding: 24 }}>Loading orgs...</p>;
+  if (memberships.length === 0) {
+    return <p style={{ padding: 24 }}>You're not a member of any organization yet. Ask an owner to add you via <code>org_members</code>.</p>;
+  }
+  if (!activeOrgId) return <p style={{ padding: 24 }}>Loading orgs...</p>;
 
   const usage = data?.org_usage_stats?.[0];
 
@@ -102,7 +100,7 @@ export default function Dashboard() {
         {usage && (
           <div style={{ fontSize: 14 }}>
             <strong>Quota:</strong> {usage.quota_used} / {usage.quota_allowed} used
-            {' · '}
+            {' - '}
             {usage.runs_this_month} runs this month
           </div>
         )}
@@ -110,7 +108,7 @@ export default function Dashboard() {
         {activeRole !== 'viewer' && <button onClick={() => setEditingWorkflowId('new')}>+ New workflow</button>}
       </header>
 
-      {loading && <p>Loading workflows…</p>}
+      {loading && <p>Loading workflows...</p>}
       {workflowsError && <pre style={{ background: '#fee', padding: 12, whiteSpace: 'pre-wrap' }}>{workflowsError}</pre>}
 
       <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -120,12 +118,12 @@ export default function Dashboard() {
             <li key={wf.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <div>
-                  <strong>{wf.name}</strong> — {wf.workflow_steps.length} steps, {wf.workflow_triggers.length} triggers
+                  <strong>{wf.name}</strong> - {wf.workflow_steps.length} steps, {wf.workflow_triggers.length} triggers
                   {lastRun && <div style={{ fontSize: 12, color: '#666' }}>Last run: {lastRun.status}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setEditingWorkflowId(wf.id)}>{activeRole === 'viewer' ? 'View' : 'Edit'}</button>
-                  {activeRole !== 'viewer' && <button onClick={() => handleRun(wf.id)}>Run ▶</button>}
+                  {activeRole !== 'viewer' && <button onClick={() => handleRun(wf.id)}>Run</button>}
                   {lastRun && <button onClick={() => setViewingRunId(lastRun.id)}>Live status</button>}
                 </div>
               </div>
