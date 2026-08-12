@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuthenticationStatus, useSignInEmailPassword, useSignUpEmailPassword } from '@nhost/react';
+import { useAuthenticationStatus, useSignInEmailPassword, useSignUpEmailPassword, useUserData } from '@nhost/react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuthenticationStatus();
+  const user = useUserData();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -13,21 +14,23 @@ export default function Home() {
   const { signUpEmailPassword, isLoading: signingUp, error: signUpError } = useSignUpEmailPassword();
   const router = useRouter();
 
-  if (isLoading) return <p>Loading…</p>;
-  if (isAuthenticated) {
-    router.push('/dashboard');
-    return null;
-  }
+  if (isLoading) return <p>Loading...</p>;
 
   const submit = async () => {
-    if (mode === 'signin') await signInEmailPassword(email, password);
-    else await signUpEmailPassword(email, password);
-    router.push('/dashboard');
+    const result = mode === 'signin'
+      ? await signInEmailPassword(email, password)
+      : await signUpEmailPassword(email, password);
+    console.log('AUTH RESULT:', result);
   };
 
   return (
-    <div style={{ maxWidth: 360, margin: '80px auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 500, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <h1>AI Agent Workflow Builder</h1>
+      <div style={{ background: '#eef', padding: 12, marginBottom: 12, fontSize: 13 }}>
+        <strong>Debug:</strong><br/>
+        isAuthenticated: {String(isAuthenticated)}<br/>
+        user: {user ? user.email : 'null'}
+      </div>
       <input placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', marginBottom: 8 }} />
       <input placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', marginBottom: 8 }} />
       <button onClick={submit} disabled={signingIn || signingUp}>
@@ -37,9 +40,11 @@ export default function Home() {
         Switch to {mode === 'signin' ? 'sign up' : 'sign in'}
       </button>
       {(signInError || signUpError) && <p style={{ color: 'red' }}>{signInError?.message || signUpError?.message}</p>}
-      <p style={{ fontSize: 12, color: '#666', marginTop: 16 }}>
-        After signing up, an owner needs to add you to an organization via the <code>org_members</code> table.
-      </p>
+      {isAuthenticated && (
+        <button onClick={() => router.push('/dashboard')} style={{ marginTop: 12, display: 'block' }}>
+          Go to dashboard →
+        </button>
+      )}
     </div>
   );
 }
