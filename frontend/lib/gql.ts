@@ -9,17 +9,14 @@ import { nhost } from './nhost';
 export async function gqlRequest<T = any>(query: string, variables: Record<string, any> = {}): Promise<T> {
   const token = nhost.auth.getAccessToken();
 
-  const res = await fetch(
-    `https://${process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN}.graphql.${process.env.NEXT_PUBLIC_NHOST_REGION}.nhost.run/v1`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ query, variables }),
-    }
-  );
+  const res = await fetch('/api/graphql-proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ query, variables }),
+  });
 
   const json = await res.json();
   if (json.errors) {
