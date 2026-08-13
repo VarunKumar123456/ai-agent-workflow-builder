@@ -1,7 +1,7 @@
 'use client';
-
 import { useState } from 'react';
 import { gqlRequest } from '../lib/gql';
+import { nhost } from '../lib/nhost';
 
 const STEP_TYPES = ['llm_call', 'http_request', 'db_write', 'notify', 'conditional_branch', 'approval_gate'];
 const TRIGGER_TYPES = ['webhook', 'scheduled', 'db_event'];
@@ -47,7 +47,8 @@ export default function WorkflowBuilder({
 
   const saveWorkflowMeta = async () => {
     if (!name.trim()) return currentWorkflowId;
-    const object: any = { org_id: orgId, name, description: '' };
+    const user = nhost.auth.getUser();
+    const object: any = { org_id: orgId, name, description: '', created_by: user?.id };
     if (currentWorkflowId) object.id = currentWorkflowId;
 
     const res: any = await gqlRequest(UPSERT_WORKFLOW, { object });
