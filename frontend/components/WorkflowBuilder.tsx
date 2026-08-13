@@ -9,9 +9,9 @@ const OWNER_ONLY_STEPS = new Set(['db_write', 'notify']);
 const OWNER_ONLY_TRIGGERS = new Set(['webhook']);
 
 const UPSERT_WORKFLOW = `
-  mutation UpsertWorkflow($id: uuid, $org_id: uuid!, $name: String!, $description: String) {
+  mutation UpsertWorkflow($object: workflows_insert_input!) {
     insert_workflows_one(
-      object: { id: $id, org_id: $org_id, name: $name, description: $description }
+      object: $object
       on_conflict: { constraint: workflows_pkey, update_columns: [name, description] }
     ) { id name }
   }
@@ -46,7 +46,11 @@ export default function WorkflowBuilder({
   const canAddTriggerType = (type: string) => role === 'owner' || (!OWNER_ONLY_TRIGGERS.has(type) && role === 'editor');
 
   const saveWorkflowMeta = async () => {
-    const res: any = await gqlRequest(UPSERT_WORKFLOW, { id: currentWorkflowId, org_id: orgId, name, description: '' });
+    if (!name.trim()) return currentWorkflowId;
+    const object: any = { org_id: orgId, name, description: '' };
+    if (currentWorkflowId) object.id = currentWorkflowId;
+
+    const res: any = await gqlRequest(UPSERT_WORKFLOW, { object });
     const id = res.insert_workflows_one.id;
     setCurrentWorkflowId(id);
     return id;
@@ -56,6 +60,7 @@ export default function WorkflowBuilder({
     if (!canAddStepType(type)) return alert(`Only an owner can add a ${type} step.`);
     try {
       const wfId = currentWorkflowId ?? (await saveWorkflowMeta());
+      if (!wfId) return alert('Please enter a workflow name first.');
       const res: any = await gqlRequest(UPSERT_STEP, { id: null, workflow_id: wfId, step_order: steps.length, type, config: {} });
       setSteps([...steps, res.upsertWorkflowStep]);
     } catch (e: any) {
@@ -67,6 +72,7 @@ export default function WorkflowBuilder({
     if (!canAddTriggerType(type)) return alert(`Only an owner can add a ${type} trigger.`);
     try {
       const wfId = currentWorkflowId ?? (await saveWorkflowMeta());
+      if (!wfId) return alert('Please enter a workflow name first.');
       const res: any = await gqlRequest(UPSERT_TRIGGER, { id: null, workflow_id: wfId, type, config: {} });
       setTriggers([...triggers, res.upsertWorkflowTrigger]);
     } catch (e: any) {
@@ -127,7 +133,7 @@ export default function WorkflowBuilder({
         )}
 
         <h4>Triggers</h4>
-        <p style={{ fontSize: 12, color: '#666' }}>Manual trigger is implicit (the Run ▶ button). Add extra triggers below.</p>
+        <p style={{ fontSize: 12, color: '#666' }}>Manual trigger is implicit (the Run button). Add extra triggers below.</p>
         <ul>
           {triggers.map((t: any) => (
             <li key={t.id}>
